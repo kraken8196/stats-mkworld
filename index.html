@@ -527,6 +527,9 @@ tr:hover td{background:var(--surf2)}
       <strong>Nombre / Par minute</strong> : le total des incidents, ou leur fréquence
       rapportée au temps passé là — un endroit où tu traînes en accumule forcément plus.</p>
     <div id="circ-traj-filtres"></div>
+    <!-- Dit pourquoi la carte « Par minute » est vide ou presque, plutôt que
+         de laisser un cadre vierge qui ressemble à une panne. -->
+    <div id="circ-traj-avert"></div>
     <div id="circ-traj"></div>
   </div>
   <div class="section">
@@ -6764,11 +6767,11 @@ function renderInventaire(circ){
 }
 const TRAJ_N       = 200;
 const TRAJ_COLS    = 16;
-const CHALEUR_COLS = 40;
+const CHALEUR_COLS = {nombre: 40, taux: 16};
 const CHALEUR_ECH  = 160;
 const CHALEUR_SIGMA = {
   nombre: {x:2.5, y:0.55},
-  taux:   {x:5.0, y:0.70},
+  taux:   {x:6.0, y:1.00},
 };
 function noyau1d(sig){
   const r=Math.max(1,Math.ceil(3*sig)), k=[];
@@ -6811,6 +6814,7 @@ let trajTypes = {DEGAT:false, ECLAIR:false, CHUTE:false};
 let trajChaleurTaux = false;
 let trajChaleurType = 'COMBINE';   // 'DEGAT' | 'ECLAIR' | 'CHUTE' | 'COMBINE'
 const CHALEUR_MIN_SECONDES = 20;
+const CHALEUR_MIN_INCIDENTS = 1;
 const INCIDENTS = [
   {cle:'DEGAT',  lib:'Dégât',  couleur:'#c82830', rgb:'200,40,48',  symbole:'circle',
    puce:'●', encre:'#fff',    texte_sombre:'#f2555f', texte_clair:'#c82830'},
@@ -7005,7 +7009,8 @@ function renderTrajectoires(circ){
   const teinte = dark ? '64,128,255' : '37,99,235';
   const sep    = dark ? '#3d5270' : '#92a8c0';   // séparateurs de tour
   const CHAL = trajVue==='chaleur';
-  const COLS = CHAL ? CHALEUR_COLS : TRAJ_COLS;
+  const COLS = CHAL ? (trajChaleurTaux ? CHALEUR_COLS.taux : CHALEUR_COLS.nombre)
+                    : TRAJ_COLS;
   const ECH  = CHAL ? CHALEUR_ECH  : TRAJ_N;
   const dessinees = activeTrajFiltre==='comparer'
       ? sel.filter(r=>r.groupe!=='milieu') : sel;
@@ -7072,14 +7077,21 @@ function renderTrajectoires(circ){
         const brut=gi[p][j],     sec=grid[p][j]*dt;
         const secEff = GP.som[p][j]*dt;
         if(trajChaleurTaux){
-          const ok = secEff>=CHALEUR_MIN_SECONDES && secLisse>0;
+          const nSect = GI.som[p][j];
+          const ok = secEff>=CHALEUR_MIN_SECONDES && secLisse>0
+                     && nSect>=CHALEUR_MIN_INCIDENTS;
           zl.push(ok ? nInc/secLisse*60 : null);
           const quoi = combine ? (detail(p,j) || `${brut} incident${brut>1?'s':''}`)
                                : `${brut} ${t.lib.toLowerCase()}${brut>1?'s':''}`;
           tl.push(ok
             ? `≈ ${(nInc/secLisse*60).toFixed(2)} incident/min dans ce secteur<br>`
-              + `${quoi} dans cette case · ${secEff.toFixed(0)} s de course observées autour`
-            : `trop peu de course observée autour (${secEff.toFixed(0)} s) — taux non estimable`);
+              + `calculé sur ${nSect.toFixed(1)} incident observé dans le secteur `
+              + `et ${secEff.toFixed(0)} s de course<br>`
+              + `(${quoi} dans la case elle-même)`
+            : (secEff<CHALEUR_MIN_SECONDES
+               ? `trop peu de course observée autour (${secEff.toFixed(0)} s) — taux non estimable`
+               : `moins d'un incident observé dans ce secteur (${nSect.toFixed(1)}) — `
+                 + `taux non estimable`));
         } else {
           zl.push(nInc);
           const quoi = combine ? (detail(p,j) || '0 incident')
@@ -7090,7 +7102,9 @@ function renderTrajectoires(circ){
       }
       z.push(zl); txt.push(tl);
     }
-    return {t, n:inc.length, trace:{
+    let nEstim = 0;
+    z.forEach(l => l.forEach(v => { if(v!=null) nEstim++; }));
+    return {t, n:inc.length, nEstim, nCases:12*COLS, trace:{
       type:'heatmap', x:xs, y:ys, z, text:txt, zsmooth:'best',
       colorscale:rampeChaleur(combine ? teinte : t.rgb), showscale:true,
       colorbar:{title:{text:trajChaleurTaux?'/min':'nb', side:'right', font:{size:10}},
@@ -7220,6 +7234,28 @@ function renderTrajectoires(circ){
                     + ` — ${c.n} sur ${n} course${n>1?'s':''}`,
                font:{size:12, color:dark?c.t.texte_sombre:c.t.texte_clair},
                x:0, xanchor:'left', y:0.99, yanchor:'top'};
+  }
+  const avert = document.getElementById('circ-traj-avert');
+  if(avert){
+    avert.innerHTML = '';
+    if(trajVue==='chaleur' && trajChaleurTaux && cartes.length===1){
+      const c = cartes[0];
+      const minutes = grid.reduce((s,l)=>s+l.reduce((a,b)=>a+b,0),0)*dt/60;
+      const quoi = c.t.cle==='COMBINE' ? 'incident' : c.t.lib.toLowerCase();
+      if(c.nEstim===0){
+        avert.innerHTML = `<p class="note">Aucune zone mesurable ici : `
+          + `<strong>${c.n} ${quoi}${c.n>1?'s':''}</strong> sur ce circuit, `
+          + `en ${minutes.toFixed(0)} minutes de course. Un taux par minute a `
+          + `besoin d'au moins un incident par secteur. L'onglet `
+          + `« Nombre » reste lisible.</p>`;
+      } else if(c.nEstim < c.nCases*0.15){
+        avert.innerHTML = `<p class="hint">Peu de zones mesurables `
+          + `(${c.nEstim} sur ${c.nCases}) : tu n'as que `
+          + `<strong>${c.n} ${quoi}${c.n>1?'s':''}</strong> sur ce circuit, `
+          + `en ${minutes.toFixed(0)} minutes de course. Les cases laissées `
+          + `vides n'ont pas assez de matière pour un taux.</p>`;
+      }
+    }
   }
   el.innerHTML = '';
   Plotly.newPlot(el, traces, lay, dispo);
