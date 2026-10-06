@@ -52,6 +52,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font:13.5px/1.55 var(
 .theme-btn:hover{color:var(--t1);border-color:var(--border2)}
 
 
+.defil-x{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+
 .g-barres{display:flex;flex-direction:column;gap:4px;margin:6px 0 8px}
 .g-ligne{display:grid;grid-template-columns:var(--lib) 1fr 66px;gap:12px;align-items:center;
   font-size:11.5px;padding:3px 6px;border-radius:10px;transition:background .15s}
@@ -107,6 +109,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font:13.5px/1.55 var(
   box-shadow:0 2px 10px rgba(34,31,28,.05)}
 #p-circuit .section h2{margin-top:0}
 .circ-entete{position:relative;border-radius:var(--r-card);overflow:hidden;
+  width:100%;max-width:100%;
   margin-bottom:22px;background:var(--surf2);aspect-ratio:6/1;min-height:120px}
 .circ-entete img{width:100%;height:100%;object-fit:cover;transform:scale(1.14)}
 .circ-entete-txt{position:absolute;left:0;right:0;bottom:0;padding:34px 24px 16px;
@@ -278,6 +281,8 @@ tr:hover td{background:var(--surf2)}
 
   .page{padding:20px 13px 56px}
   .section{margin-bottom:32px}
+  .circ-entete{aspect-ratio:3/1;min-height:104px}
+  .circ-entete-txt{padding:26px 14px 12px}
   h1{font-size:23px}
   h2{font-size:15px}
   .page-sub{margin-bottom:24px}
@@ -297,6 +302,17 @@ tr:hover td{background:var(--surf2)}
 
   .ctl-bar{gap:8px 12px}
   .seg>button, .chip-inc, .btn, .btn-analyser, .tb-filtres-btn{min-height:32px}
+
+  .g-ligne{grid-template-columns:1fr auto;
+           grid-template-areas:"lib lib" "piste val";
+           gap:2px 10px;padding:5px 6px}
+  .g-lib{grid-area:lib;white-space:normal;overflow:visible}
+  .g-piste{grid-area:piste}
+  .g-val{grid-area:val}
+
+  #circ-inv, #circ-traj{min-width:560px}
+  .race-chart-body{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .race-chart-body > div{min-width:640px}
 
   .anl-voile{padding:14px 10px}
   .anl-fenetre{padding:20px 16px}
@@ -553,7 +569,7 @@ tr:hover td{background:var(--surf2)}
       dans chaque groupe. <strong>Quelles courses</strong> choisit celles à afficher.
       La couleur dit l'objet tenu ; fond neutre = mains vides, nom exact au survol.</p>
     <div id="circ-inv-filtres"></div>
-    <div id="circ-inv"></div>
+    <div class="defil-x"><div id="circ-inv"></div></div>
     <div id="circ-inv-leg" style="margin-top:10px"></div>
   </div>
   <div class="section" id="circ-traj-section">
@@ -573,7 +589,7 @@ tr:hover td{background:var(--surf2)}
     <!-- Dit pourquoi la carte « Par minute » est vide ou presque, plutôt que
          de laisser un cadre vierge qui ressemble à une panne. -->
     <div id="circ-traj-avert"></div>
-    <div id="circ-traj"></div>
+    <div class="defil-x"><div id="circ-traj"></div></div>
   </div>
   <div class="section">
     <h2>Où ramasses-tu les pièces ?</h2>
@@ -593,9 +609,12 @@ tr:hover td{background:var(--surf2)}
   </div>
   <div class="section" id="circ-graph-section">
     <h2>Graphiques de course</h2>
-    <p class="hint">Seules les trois dernières courses jouées sur ce circuit sont
-      disponibles ici : chaque graphique pèse lourd, et les embarquer toutes rendrait
-      la page interminable à ouvrir.</p>
+    <!-- ⚠ Le nombre de courbes embarquées est un RÉGLAGE de fabrication
+         (--courses-graphiques) : trois dans l'application, une seule dans le
+         site publié, pour le poids. La phrase annonçait « les trois
+         dernières » en dur — fausse sur le site publié, où l'on n'en trouve
+         qu'une. Elle se calcule désormais. -->
+    <p class="hint" id="circ-graph-note"></p>
     <div id="circ-graphs"></div>
   </div>
 </div>
@@ -7537,6 +7556,19 @@ function renderCircuit(circ) {
   const graphCont=document.getElementById('circ-graphs');
   const matching=cs.map(c=>{const cid=String(c.course_id);return PLOTLY_GRAPHS[cid]?{course_id:c.course_id,g:PLOTLY_GRAPHS[cid]}:null;}).filter(Boolean);
   graphSec.style.display = matching.length ? '' : 'none';
+  const graphNote = document.getElementById('circ-graph-note');
+  if(graphNote && matching.length){
+    const n = matching.length;
+    graphNote.textContent = n === cs.length
+      ? `Tes ${n} course${n>1?'s':''} sur ce circuit, en détail.`
+      : (n === 1
+         ? `Une seule de tes ${cs.length} courses est détaillée ici, la plus `
+           + `récente : chaque courbe pèse lourd, et les embarquer toutes `
+           + `rendrait la page interminable à ouvrir.`
+         : `Les ${n} dernières de tes ${cs.length} courses sur ce circuit sont `
+           + `détaillées ici : chaque courbe pèse lourd, et les embarquer `
+           + `toutes rendrait la page interminable à ouvrir.`);
+  }
   graphCont.innerHTML='';
   const parId = {};
   cs.forEach(c => { parId[String(c.course_id)] = c; });
