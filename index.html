@@ -29,7 +29,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font:13.5px/1.55 var(
 .tb{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--surf) 88%,transparent);
   backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
 .tb-haut{display:flex;align-items:center;gap:18px;padding:11px 22px;flex-wrap:wrap}
-.tb-marque{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tb-marque{display:flex;align-items:center;gap:10px;flex-shrink:0;
+  font:inherit;color:inherit;background:none;border:none;padding:0;
+  text-align:left;cursor:pointer}
+.tb-marque:hover .tb-nom{color:var(--red)}
 .tb-logo{font-size:22px;line-height:1}
 .tb-nom{display:block;font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
 .tb-meta{display:block;font-size:10.5px;color:var(--t3)}
@@ -55,6 +58,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font:13.5px/1.55 var(
 .tb-filtres[hidden]{display:none}
 .tb-filtres-pied{font-size:10px;color:var(--t3);align-self:center}
 .joueur-select,.mode-select{padding:0;border:none}
+.tb-theme-menu{display:none}
 .theme-btn{background:var(--surf2);border:1px solid var(--border);color:var(--t2);border-radius:8px;padding:4px 9px;cursor:pointer;font-size:10px;font-family:inherit;transition:.13s}
 .theme-btn:hover{color:var(--t1);border-color:var(--border2)}
 
@@ -297,6 +301,9 @@ tr:hover td{background:var(--surf2)}
   .tb-filtres{padding-left:12px;padding-right:12px;gap:16px}
 
   .tb-burger{display:flex}
+  .tb-actions .theme-btn{display:none}
+  .tb-theme-menu{display:block;margin-top:6px;border-top:1px solid var(--border);
+                 border-radius:0 0 10px 10px;padding-top:13px}
   .tb-actions{margin-left:auto}
   .tb-nav{display:none;flex-basis:100%;order:3;flex-direction:column;
           gap:2px;margin-top:2px}
@@ -351,13 +358,18 @@ tr:hover td{background:var(--surf2)}
 <!-- SIDEBAR -->
 <header class="tb">
   <div class="tb-haut">
-    <div class="tb-marque">
+    <!-- Cliquable : revenir à l'accueil en touchant le titre est le réflexe
+         de n'importe quel site, et c'était le seul endroit du nôtre où ça ne
+         marchait pas. Un vrai <button> plutôt qu'un <div> qui écoute les
+         clics : il répond au clavier et s'annonce comme un bouton. -->
+    <button class="tb-marque" onclick="nav('p-overview',null)"
+            title="Retour à la vue d'ensemble">
       <span class="tb-logo">🏁</span>
       <span>
         <span class="tb-nom">MKW Analyse</span>
         <span class="tb-meta" id="sb-meta">—</span>
       </span>
-    </div>
+    </button>
     <!-- Navigation en pastilles : six destinations tiennent sur une ligne, et
          la page en cours se voit sans avoir à parcourir une colonne. Les 30
          circuits ne sont plus listés ici — on y accède par la galerie. -->
@@ -378,6 +390,8 @@ tr:hover td{background:var(--surf2)}
               onclick="nav('p-timing',this)">Timing</button>
       <button class="tb-lien" data-page="p-pieces"
               onclick="nav('p-pieces',this)">Pièces</button>
+      <!-- Visible sur téléphone seulement, voir le bouton jumeau plus bas. -->
+      <button class="tb-lien tb-theme-menu" onclick="toggleTheme()">☾/☀ Thème</button>
     </nav>
     <div class="tb-actions">
 
@@ -385,6 +399,13 @@ tr:hover td{background:var(--surf2)}
       <button class="tb-filtres-btn" id="tb-filtres-btn" onclick="basculerFiltres()">
         Filtres <span id="tb-filtres-n"></span>
       </button>
+      <!-- Deux exemplaires du même bouton, un seul visible à la fois.
+           Sur grand écran il est ici, parmi les commandes. Sur téléphone il
+           descend au bas du menu déplié : entre « Filtres » et le menu, il
+           encombrait une barre déjà chargée pour un réglage qu'on touche une
+           fois. Les déplacer par le style est impossible — ils n'ont pas le
+           même parent — et un seul bouton qu'on déménagerait en JavaScript
+           coûterait plus de code que ce doublon. -->
       <button class="theme-btn" onclick="toggleTheme()">☾/☀</button>
       <!-- Menu replié, visible sur téléphone uniquement : sept onglets côte à
            côte y occupaient deux rangées entières de l'écran.
