@@ -39,12 +39,14 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font:13.5px/1.55 var(
 .tb-lien:hover{background:var(--surf2);color:var(--t1)}
 .tb-lien.on{background:var(--red);color:#fff;box-shadow:0 3px 10px rgba(232,50,60,.32)}
 .tb-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.tb-burger{display:none;font:inherit;font-size:12px;font-weight:700;color:var(--t2);
-  background:var(--surf2);border:1px solid var(--border);border-radius:999px;
-  padding:7px 14px;cursor:pointer;align-items:center;gap:8px;max-width:58vw}
-.tb-burger-trait{font-size:14px;line-height:1}
-.tb-burger>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tb-burger.on{background:var(--blu);border-color:var(--blu);color:#fff}
+.tb-burger{display:none;width:38px;height:38px;padding:0;flex:none;cursor:pointer;
+  background:var(--surf2);border:1px solid var(--border);border-radius:11px;
+  flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  transition:background .14s,border-color .14s}
+.tb-burger>span{display:block;width:17px;height:2px;border-radius:2px;
+  background:var(--t2);transition:background .14s}
+.tb-burger.on{background:var(--blu);border-color:var(--blu)}
+.tb-burger.on>span{background:#fff}
 .tb-filtres-btn{font:inherit;font-size:12px;font-weight:600;color:var(--t2);background:var(--surf2);
   border:1px solid var(--border);padding:7px 13px;border-radius:999px;cursor:pointer;transition:.15s}
 .tb-filtres-btn:hover{color:var(--t1);border-color:var(--border2)}
@@ -294,7 +296,7 @@ tr:hover td{background:var(--surf2)}
   .tb-haut{padding:9px 12px;gap:10px}
   .tb-filtres{padding-left:12px;padding-right:12px;gap:16px}
 
-  .tb-burger{display:inline-flex}
+  .tb-burger{display:flex}
   .tb-nav{display:none;flex-basis:100%;order:3;flex-direction:column;
           gap:2px;margin-top:2px}
   .tb-nav.ouvert{display:flex}
@@ -372,20 +374,23 @@ tr:hover td{background:var(--surf2)}
               onclick="nav('p-pieces',this)">Pièces</button>
     </nav>
     <div class="tb-actions">
-      <!-- Menu replié, visible sur téléphone uniquement : sept onglets côte à
-           côte y occupaient deux rangées entières de l'écran. Il porte le nom
-           de la page en cours, qui n'est plus lisible une fois les onglets
-           repliés. -->
-      <button class="tb-burger" id="tb-burger" onclick="basculerMenu()"
-              aria-expanded="false" aria-controls="tb-nav">
-        <span class="tb-burger-trait">☰</span>
-        <span id="tb-burger-lbl">Vue d'ensemble</span>
-      </button>
+
 
       <button class="tb-filtres-btn" id="tb-filtres-btn" onclick="basculerFiltres()">
         Filtres <span id="tb-filtres-n"></span>
       </button>
       <button class="theme-btn" onclick="toggleTheme()">☾/☀</button>
+      <!-- Menu replié, visible sur téléphone uniquement : sept onglets côte à
+           côte y occupaient deux rangées entières de l'écran.
+           ⚠ EN DERNIER, donc tout à droite, et SANS LIBELLÉ : la première
+           version portait le nom de la page et avait la forme du bouton
+           « Filtres » — Théo les confondait. Trois traits, rien d'autre.
+           Le nom de la page part dans `aria-label`, pour qui navigue sans
+           voir l'écran. -->
+      <button class="tb-burger" id="tb-burger" onclick="basculerMenu()"
+              aria-expanded="false" aria-controls="tb-nav" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
   <!-- Les filtres n'étaient utiles qu'au moment de les changer : ils occupaient
@@ -5982,7 +5987,7 @@ function renderPiecesHeatmap(circ, cs){
   if(!pts.length){ container.innerHTML = '<p class="note">Aucune pièce ramassée sur ce circuit.</p>'; return; }
   const nCourses = tourNums.map(t =>
     cs.filter(c => Object.keys(c.temps_par_tour || {}).length >= t).length || 1);
-  const W = 540, ROW_H = 28, SIGMA = 0.025;
+  const W = 540, ROW_H = TACTILE ? 46 : 28, SIGMA = 0.025;
   const parTour = {};
   pts.forEach(x => { (parTour[x.tour] = parTour[x.tour] || []).push(x); });
   const densite = (liste, nC) => {
@@ -6006,7 +6011,8 @@ function renderPiecesHeatmap(circ, cs){
   const H = maxTours * ROW_H;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
-  canvas.style.cssText = 'width:100%;height:auto;display:block;border-radius:4px';
+  canvas.style.cssText = 'width:100%;height:auto;display:block;border-radius:4px'
+    + (TACTILE ? ';min-width:' + W + 'px' : '');   // voir la note sur l'échelle
   const ctx = canvas.getContext('2d');
   let maxG = 0;
   const dens = tourNums.map((t, i) => {
@@ -6058,7 +6064,8 @@ function renderPiecesHeatmap(circ, cs){
   });
   rangee.appendChild(libelles);
   const boite = document.createElement('div');
-  boite.style.cssText = 'flex:1;min-width:0';
+  boite.style.cssText = 'flex:1;min-width:0'
+    + (TACTILE ? ';overflow-x:auto;-webkit-overflow-scrolling:touch' : '');
   boite.appendChild(canvas);
   rangee.appendChild(boite);
   container.appendChild(rangee);
@@ -6301,7 +6308,7 @@ function renderIncidentHeatmap(circ, cs) {
     { key: 'CHUTE',  lbl: 'Sorties de circuit',  r:156, g:39,  b:176 },
   ];
   const W     = 540;
-  const ROW_H = 28;
+  const ROW_H = TACTILE ? 46 : 28;
   const SIGMA = 0.025;
   function buildDensity(points) {
     const density = new Float32Array(W);
@@ -6323,7 +6330,8 @@ function renderIncidentHeatmap(circ, cs) {
     const canvas = document.createElement('canvas');
     canvas.width  = W;
     canvas.height = H;
-    canvas.style.cssText = 'width:100%;height:auto;display:block;border-radius:4px';
+    canvas.style.cssText = 'width:100%;height:auto;display:block;border-radius:4px'
+    + (TACTILE ? ';min-width:' + W + 'px' : '');   // voir la note sur l'échelle
     const ctx = canvas.getContext('2d');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const bgR = isDark ? 26 : 236;
@@ -6408,7 +6416,9 @@ function renderIncidentHeatmap(circ, cs) {
     });
     ro.observe(canvas);
     const canvasWrap = document.createElement('div');
-    canvasWrap.style.cssText = 'flex:1;min-width:0;position:relative;border-radius:4px;overflow:hidden';
+    canvasWrap.style.cssText = 'flex:1;min-width:0;position:relative;border-radius:4px'
+      + (TACTILE ? ';overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch'
+                 : ';overflow:hidden');
     canvasWrap.appendChild(canvas);
     const tooltip = document.createElement('div');
     tooltip.style.cssText = 'position:absolute;background:var(--surf);border:1px solid var(--border2);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--t1);pointer-events:none;display:none;z-index:10;white-space:nowrap';
@@ -7762,8 +7772,8 @@ function fermerMenu(){
   b.setAttribute('aria-expanded','false');
 }
 function libelleMenu(txt){
-  const l=document.getElementById('tb-burger-lbl');
-  if(l && txt) l.textContent = txt;
+  const b=document.getElementById('tb-burger');
+  if(b && txt) b.setAttribute('aria-label', 'Menu — ' + txt);
 }
 const PAGE_REPERE = {'p-overview':'vue-ensemble', 'p-circuits':'circuits',
   'p-incidents':'incidents', 'p-objets':'objets', 'p-position':'position',
