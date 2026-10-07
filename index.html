@@ -39,6 +39,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font:13.5px/1.55 var(
 .tb-lien:hover{background:var(--surf2);color:var(--t1)}
 .tb-lien.on{background:var(--red);color:#fff;box-shadow:0 3px 10px rgba(232,50,60,.32)}
 .tb-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-burger{display:none;font:inherit;font-size:12px;font-weight:700;color:var(--t2);
+  background:var(--surf2);border:1px solid var(--border);border-radius:999px;
+  padding:7px 14px;cursor:pointer;align-items:center;gap:8px;max-width:58vw}
+.tb-burger-trait{font-size:14px;line-height:1}
+.tb-burger>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-burger.on{background:var(--blu);border-color:var(--blu);color:#fff}
 .tb-filtres-btn{font:inherit;font-size:12px;font-weight:600;color:var(--t2);background:var(--surf2);
   border:1px solid var(--border);padding:7px 13px;border-radius:999px;cursor:pointer;transition:.15s}
 .tb-filtres-btn:hover{color:var(--t1);border-color:var(--border2)}
@@ -286,9 +292,14 @@ tr:hover td{background:var(--surf2)}
   .page-sub{margin-bottom:24px}
 
   .tb-haut{padding:9px 12px;gap:10px}
-  .tb-nav{flex-basis:100%;order:3}
-  .tb-lien{font-size:12px;padding:6px 10px}
   .tb-filtres{padding-left:12px;padding-right:12px;gap:16px}
+
+  .tb-burger{display:inline-flex}
+  .tb-nav{display:none;flex-basis:100%;order:3;flex-direction:column;
+          gap:2px;margin-top:2px}
+  .tb-nav.ouvert{display:flex}
+  .tb-lien{width:100%;text-align:left;font-size:14px;padding:11px 13px;
+           border-radius:10px}
 
   .kpi-row{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
   .kpi{padding:12px 13px}
@@ -342,16 +353,34 @@ tr:hover td{background:var(--surf2)}
     <!-- Navigation en pastilles : six destinations tiennent sur une ligne, et
          la page en cours se voit sans avoir à parcourir une colonne. Les 30
          circuits ne sont plus listés ici — on y accède par la galerie. -->
-    <nav class="tb-nav">
-      <button class="tb-lien on" onclick="nav('p-overview',this)">Vue d'ensemble</button>
-      <button class="tb-lien" onclick="nav('p-circuits',this)">Circuits</button>
-      <button class="tb-lien" onclick="nav('p-incidents',this)">Incidents</button>
-      <button class="tb-lien" onclick="nav('p-objets',this)">Objets</button>
-      <button class="tb-lien" onclick="nav('p-position',this)">Position</button>
-      <button class="tb-lien" onclick="nav('p-timing',this)">Timing</button>
-      <button class="tb-lien" onclick="nav('p-pieces',this)">Pièces</button>
+    <!-- `data-page` : sert à retrouver le bouton d'une page quand on n'arrive
+         pas par un clic — retour arrière du navigateur, ou adresse partagée. -->
+    <nav class="tb-nav" id="tb-nav">
+      <button class="tb-lien on" data-page="p-overview"
+              onclick="nav('p-overview',this)">Vue d'ensemble</button>
+      <button class="tb-lien" data-page="p-circuits"
+              onclick="nav('p-circuits',this)">Circuits</button>
+      <button class="tb-lien" data-page="p-incidents"
+              onclick="nav('p-incidents',this)">Incidents</button>
+      <button class="tb-lien" data-page="p-objets"
+              onclick="nav('p-objets',this)">Objets</button>
+      <button class="tb-lien" data-page="p-position"
+              onclick="nav('p-position',this)">Position</button>
+      <button class="tb-lien" data-page="p-timing"
+              onclick="nav('p-timing',this)">Timing</button>
+      <button class="tb-lien" data-page="p-pieces"
+              onclick="nav('p-pieces',this)">Pièces</button>
     </nav>
     <div class="tb-actions">
+      <!-- Menu replié, visible sur téléphone uniquement : sept onglets côte à
+           côte y occupaient deux rangées entières de l'écran. Il porte le nom
+           de la page en cours, qui n'est plus lisible une fois les onglets
+           repliés. -->
+      <button class="tb-burger" id="tb-burger" onclick="basculerMenu()"
+              aria-expanded="false" aria-controls="tb-nav">
+        <span class="tb-burger-trait">☰</span>
+        <span id="tb-burger-lbl">Vue d'ensemble</span>
+      </button>
 
       <button class="tb-filtres-btn" id="tb-filtres-btn" onclick="basculerFiltres()">
         Filtres <span id="tb-filtres-n"></span>
@@ -7719,11 +7748,69 @@ function tCrit(df) {
   const z = 1.959964, z2 = z*z, z3 = z2*z, z5 = z3*z2;
   return z + (z3 + z)/(4*df) + (5*z5 + 16*z3 + 3*z)/(96*df*df);
 }
+function basculerMenu(){
+  const n=document.getElementById('tb-nav'), b=document.getElementById('tb-burger');
+  if(!n||!b) return;
+  const ouvert=n.classList.toggle('ouvert');
+  b.classList.toggle('on', ouvert);
+  b.setAttribute('aria-expanded', ouvert?'true':'false');
+}
+function fermerMenu(){
+  const n=document.getElementById('tb-nav'), b=document.getElementById('tb-burger');
+  if(!n||!b) return;
+  n.classList.remove('ouvert'); b.classList.remove('on');
+  b.setAttribute('aria-expanded','false');
+}
+function libelleMenu(txt){
+  const l=document.getElementById('tb-burger-lbl');
+  if(l && txt) l.textContent = txt;
+}
+const PAGE_REPERE = {'p-overview':'vue-ensemble', 'p-circuits':'circuits',
+  'p-incidents':'incidents', 'p-objets':'objets', 'p-position':'position',
+  'p-timing':'timing', 'p-pieces':'pieces'};
+const REPERE_PAGE = {};
+Object.keys(PAGE_REPERE).forEach(k=>{ REPERE_PAGE[PAGE_REPERE[k]] = k; });
+let _enLectureHistorique = false;
+function repereActuel(){
+  try { return decodeURIComponent((location.hash||'').slice(1)); }
+  catch(e){ return (location.hash||'').slice(1); }
+}
+function ecrireRepere(r){
+  if(_enLectureHistorique || typeof location === 'undefined') return;
+  if(repereActuel() !== r) location.hash = r;
+}
+function boutonDePage(pageId){
+  return document.querySelector('.tb-lien[data-page="'+pageId+'"]');
+}
+function dejaAffichee(pageId){
+  const e = document.getElementById(pageId);
+  return !!(e && e.classList && e.classList.contains('on'));
+}
+function appliquerRepere(){
+  const r = repereActuel();
+  _enLectureHistorique = true;
+  try{
+    if(r.indexOf('circuit/') === 0){
+      const c = r.slice(8);
+      if(!DATA.some(x=>x.circuit===c)){
+        if(!dejaAffichee('p-circuits')) nav('p-circuits', boutonDePage('p-circuits'));
+      } else if(!(dejaAffichee('p-circuit') && circuitAffiche === c)){
+        navCircuit(c, null);
+      }
+    } else {
+      const page = REPERE_PAGE[r] || 'p-overview';
+      if(!dejaAffichee(page)) nav(page, boutonDePage(page));
+    }
+  } finally { _enLectureHistorique = false; }
+}
 function nav(pageId,el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById(pageId).classList.add('on');
   document.querySelectorAll('.tb-lien, .circ-vign').forEach(i=>i.classList.remove('on'));
-  if(el) el.classList.add('on');
+  const bouton = el || boutonDePage(pageId);
+  if(bouton){ bouton.classList.add('on'); libelleMenu(bouton.textContent.trim()); }
+  fermerMenu();
+  ecrireRepere(PAGE_REPERE[pageId] || 'vue-ensemble');
   const renders={'p-overview':renderOverview,'p-position':renderPosition,'p-timing':renderTiming,'p-objets':renderObjets,'p-incidents':renderIncidents,'p-pieces':renderPieces,'p-circuits':renderCircuitsGalerie};
   if(renders[pageId]) renders[pageId]();
 }
@@ -7733,7 +7820,12 @@ function navCircuit(circ,el) {
   document.getElementById('p-circuit').classList.add('on');
   document.querySelectorAll('.tb-lien, .circ-vign').forEach(i=>i.classList.remove('on'));
   if(el) el.classList.add('on');
+  const ongletCircuits = boutonDePage('p-circuits');
+  if(ongletCircuits) ongletCircuits.classList.add('on');
+  libelleMenu(circ);
+  fermerMenu();
   circuitAffiche = circ;
+  ecrireRepere('circuit/' + circ);
   renderCircuit(circ);
 }
 function couleurCircuit(moy, nbJoueurs) {
@@ -7882,7 +7974,12 @@ function redessinerCanvas(theme) {
   document.getElementById('sb-meta').textContent = `${baseData().length} courses · ${circuits.length} circuits`;
   buildCircuitNav();
   if (typeof anlAccueilSiVide === 'function' && anlAccueilSiVide()) return;
-  renderOverview();
+  if(typeof window !== 'undefined' && window.addEventListener)
+    window.addEventListener('hashchange', appliquerRepere);
+  if(typeof location !== 'undefined' && location.hash && location.hash.length > 1)
+    appliquerRepere();
+  else
+    renderOverview();
 })();
 </script>
 </body>
