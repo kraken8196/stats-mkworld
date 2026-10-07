@@ -290,6 +290,7 @@ tr:hover td{background:var(--surf2)}
 
   .page{padding:20px 13px 56px}
   .section{margin-bottom:32px}
+  #p-circuit .section{padding:16px 12px 18px}
   .circ-entete{aspect-ratio:3/1;min-height:104px}
   .circ-entete-txt{padding:26px 14px 12px}
   h1{font-size:23px}
@@ -6013,7 +6014,7 @@ function renderPiecesHeatmap(circ, cs){
   if(!pts.length){ container.innerHTML = '<p class="note">Aucune pièce ramassée sur ce circuit.</p>'; return; }
   const nCourses = tourNums.map(t =>
     cs.filter(c => Object.keys(c.temps_par_tour || {}).length >= t).length || 1);
-  const W = 540, ROW_H = TACTILE ? 46 : 28, SIGMA = 0.025;
+  const W = 540, ROW_H = TACTILE ? 62 : 28, SIGMA = 0.025;
   const parTour = {};
   pts.forEach(x => { (parTour[x.tour] = parTour[x.tour] || []).push(x); });
   const densite = (liste, nC) => {
@@ -6038,7 +6039,7 @@ function renderPiecesHeatmap(circ, cs){
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   canvas.style.cssText = 'width:100%;display:block;border-radius:4px;height:'
-    + (TACTILE ? (maxTours * 46) + 'px' : 'auto');
+    + (TACTILE ? (maxTours * 62) + 'px' : 'auto');
   const ctx = canvas.getContext('2d');
   let maxG = 0;
   const dens = tourNums.map((t, i) => {
@@ -6073,14 +6074,16 @@ function renderPiecesHeatmap(circ, cs){
   ctx.setLineDash([]);
   container.innerHTML = '';
   const axe = document.createElement('div');
-  axe.style.cssText = 'display:flex;justify-content:space-between;padding:0 0 2px 36px;'
+  axe.style.cssText = 'display:flex;justify-content:space-between;padding:0 0 2px '
+                    + LARG_LIB_TOUR + 'px;'
                     + 'font-size:10px;color:var(--t3)';
   axe.innerHTML = '<span>Début</span><span>25 %</span><span>50 %</span><span>75 %</span><span>Fin</span>';
   container.appendChild(axe);
   const rangee = document.createElement('div');
   rangee.style.cssText = 'display:flex;align-items:stretch;gap:6px';
   const libelles = document.createElement('div');
-  libelles.style.cssText = `display:flex;flex-direction:column;width:30px;flex:none`;
+  libelles.style.cssText = `display:flex;flex-direction:column;`
+                       + `width:${LARG_LIB_TOUR}px;flex:none`;
   tourNums.forEach(t => {
     const d = document.createElement('div');
     d.style.cssText = `flex:1;display:flex;align-items:center;justify-content:flex-end;`
@@ -6333,7 +6336,7 @@ function renderIncidentHeatmap(circ, cs) {
     { key: 'CHUTE',  lbl: 'Sorties de circuit',  r:156, g:39,  b:176 },
   ];
   const W     = 540;
-  const ROW_H = TACTILE ? 46 : 28;
+  const ROW_H = TACTILE ? 62 : 28;
   const SIGMA = 0.025;
   function buildDensity(points) {
     const density = new Float32Array(W);
@@ -6356,7 +6359,7 @@ function renderIncidentHeatmap(circ, cs) {
     canvas.width  = W;
     canvas.height = H;
   canvas.style.cssText = 'width:100%;display:block;border-radius:4px;height:'
-    + (TACTILE ? (maxTours * 46) + 'px' : 'auto');
+    + (TACTILE ? (maxTours * 62) + 'px' : 'auto');
     const ctx = canvas.getContext('2d');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const bgR = isDark ? 26 : 236;
@@ -6406,7 +6409,8 @@ function renderIncidentHeatmap(circ, cs) {
   }
   container.innerHTML = '';
   const legendeX = document.createElement('div');
-  legendeX.style.cssText = 'display:flex;justify-content:space-between;padding:0 0 2px 36px;font-size:10px;color:var(--t3)';
+  legendeX.style.cssText = 'display:flex;justify-content:space-between;padding:0 0 2px '
+      + LARG_LIB_TOUR + 'px;font-size:10px;color:var(--t3)';
   legendeX.innerHTML = '<span>Début</span><span>25%</span><span>50%</span><span>75%</span><span>Fin</span>';
   container.appendChild(legendeX);
   TYPES.forEach(({key, lbl, r, g, b}) => {
@@ -6427,7 +6431,8 @@ function renderIncidentHeatmap(circ, cs) {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:stretch';
     const labelsCol = document.createElement('div');
-    labelsCol.style.cssText = 'width:36px;flex-shrink:0;display:flex;flex-direction:column';
+    labelsCol.style.cssText = 'width:' + LARG_LIB_TOUR
+      + 'px;flex-shrink:0;display:flex;flex-direction:column';
     tourNums.forEach(t => {
       const lb = document.createElement('div');
       lb.style.cssText = 'flex:1;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;font-size:11px;font-weight:700;color:var(--t2)';
@@ -6899,6 +6904,7 @@ function renderInventaire(circ){
 }
 const TRAJ_N       = 200;
 const TRAJ_COLS    = 16;
+const LARG_LIB_TOUR = TACTILE ? 22 : 36;
 const CHALEUR_COLS = {nombre: 40, taux: 16};
 const CHALEUR_ECH  = 160;
 const CHALEUR_SIGMA = {
