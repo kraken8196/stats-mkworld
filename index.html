@@ -297,6 +297,7 @@ tr:hover td{background:var(--surf2)}
   .tb-filtres{padding-left:12px;padding-right:12px;gap:16px}
 
   .tb-burger{display:flex}
+  .tb-actions{margin-left:auto}
   .tb-nav{display:none;flex-basis:100%;order:3;flex-direction:column;
           gap:2px;margin-top:2px}
   .tb-nav.ouvert{display:flex}
@@ -6011,8 +6012,8 @@ function renderPiecesHeatmap(circ, cs){
   const H = maxTours * ROW_H;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
-  canvas.style.cssText = 'width:100%;height:auto;display:block;border-radius:4px'
-    + (TACTILE ? ';min-width:' + W + 'px' : '');   // voir la note sur l'échelle
+  canvas.style.cssText = 'width:100%;display:block;border-radius:4px;height:'
+    + (TACTILE ? (maxTours * 46) + 'px' : 'auto');
   const ctx = canvas.getContext('2d');
   let maxG = 0;
   const dens = tourNums.map((t, i) => {
@@ -6064,8 +6065,7 @@ function renderPiecesHeatmap(circ, cs){
   });
   rangee.appendChild(libelles);
   const boite = document.createElement('div');
-  boite.style.cssText = 'flex:1;min-width:0'
-    + (TACTILE ? ';overflow-x:auto;-webkit-overflow-scrolling:touch' : '');
+  boite.style.cssText = 'flex:1;min-width:0';
   boite.appendChild(canvas);
   rangee.appendChild(boite);
   container.appendChild(rangee);
@@ -6330,8 +6330,8 @@ function renderIncidentHeatmap(circ, cs) {
     const canvas = document.createElement('canvas');
     canvas.width  = W;
     canvas.height = H;
-    canvas.style.cssText = 'width:100%;height:auto;display:block;border-radius:4px'
-    + (TACTILE ? ';min-width:' + W + 'px' : '');   // voir la note sur l'échelle
+  canvas.style.cssText = 'width:100%;display:block;border-radius:4px;height:'
+    + (TACTILE ? (maxTours * 46) + 'px' : 'auto');
     const ctx = canvas.getContext('2d');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const bgR = isDark ? 26 : 236;
@@ -6416,9 +6416,7 @@ function renderIncidentHeatmap(circ, cs) {
     });
     ro.observe(canvas);
     const canvasWrap = document.createElement('div');
-    canvasWrap.style.cssText = 'flex:1;min-width:0;position:relative;border-radius:4px'
-      + (TACTILE ? ';overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch'
-                 : ';overflow:hidden');
+    canvasWrap.style.cssText = 'flex:1;min-width:0;position:relative;border-radius:4px;overflow:hidden';
     canvasWrap.appendChild(canvas);
     const tooltip = document.createElement('div');
     tooltip.style.cssText = 'position:absolute;background:var(--surf);border:1px solid var(--border2);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--t1);pointer-events:none;display:none;z-index:10;white-space:nowrap';
