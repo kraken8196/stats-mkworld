@@ -5485,7 +5485,7 @@ let LANGUE = (function(){
     const choisi = localStorage.getItem('mkw-langue');
     if(LANGUES.indexOf(choisi) >= 0) return choisi;
   } catch(e){}
-  const nav = ((typeof navigator !== 'undefined' && navigator.language) || 'fr')
+  const nav = ((typeof navigator !== 'undefined' && navigator.language) || '')
                 .toLowerCase();
   for(let i=0;i<LANGUES.length;i++) if(nav.indexOf(LANGUES[i]) === 0) return LANGUES[i];
   return LANGUES.indexOf('en') >= 0 ? 'en' : 'fr';
